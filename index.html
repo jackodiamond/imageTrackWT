@@ -1,0 +1,360 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.5/dist/mindar-image-three.prod.js"></script>
+    <script type="module">
+      const THREE = window.MINDAR.IMAGE.THREE;
+      const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+	container: document.querySelector("#container"),
+	imageTargetSrc: "targets.mind"
+      });
+      const {renderer, scene, camera} = mindarThree;
+      const anchor = [];
+      const anchor1 = mindarThree.addAnchor(0);
+      anchor.push(anchor1);
+      const anchor2 = mindarThree.addAnchor(1);
+      anchor.push(anchor2);
+      const geometry = new THREE.PlaneGeometry(1, 0.55);
+      const material = new THREE.MeshBasicMaterial( {color: 0x00ffff, transparent: true, opacity: 0.9} );
+      const plane = new THREE.Mesh( geometry, material );
+      var mesh;
+      var recievedObject;
+      var recievedObjectCopy=[];
+      var objects=[];
+      var currentScene;
+   //   anchor.group.add(plane);
+      const start = async() => {
+	await mindarThree.start();
+	renderer.setAnimationLoop(() => {
+	   
+	  renderer.render(scene, camera);
+	});
+      }
+      
+      const startButton = document.querySelector("#startButton");
+      startButton.addEventListener("click", () => {
+	start();
+      });
+      stopButton.addEventListener("click", () => {
+	mindarThree.stop();
+	mindarThree.renderer.setAnimationLoop(null);
+      });
+      
+      
+      
+      
+      
+const ObjectType ={
+	Cube:0,
+	Sphere:1,
+	Cylinder:2,
+	Cone:3,
+	Button:4,
+	Text:5,
+	Image:6,
+	Gltf:7,
+	Fbx:8,
+	Obj:9,
+	Video:10
+}
+
+const actionType ={
+	click:0,
+	drag:1
+}
+
+class baseObject{
+
+	constructor(name, textValue,type,action,actionObject,objectPosition,objectRotation,objectScale) {
+    this.baseObjectName = name;
+    this.textValue = textValue;
+    this.objectType = type;
+    this.action = action;
+    this.actionObject = actionObject;
+    this.position = objectPosition;
+    this.rotation = objectRotation;
+    this.scale = objectScale;
+  }
+
+  	baseObjectName;
+	textValue;
+	objectType; 
+	action;
+	actionObject;
+	position;
+	rotation;
+	scale;
+}
+
+
+
+loadFile();
+
+function readTextFile(file, callback) {
+    var rawFile = new XMLHttpRequest();
+    rawFile.overrideMimeType("application/json");
+    rawFile.open("GET", file, true);
+    rawFile.onreadystatechange = function() {
+        if (rawFile.readyState === 4 && rawFile.status == "200") {
+            callback(rawFile.responseText);
+        }
+    }
+    rawFile.send(null);
+}
+
+
+
+function loadFile()
+{
+	console.log("abc");
+	var cubePos = new THREE.Vector3	(10,1,0);
+	var cubeRot = new THREE.Vector3	(90,0,0);
+	var cubeScale = new THREE.Vector3(1,1,1);
+
+	var cubeObject = new baseObject("cube01",null,ObjectType.Cube,actionType.click,cubePos,cubeRot,cubeScale);
+
+	var imagePos = new THREE.Vector3	(-10,1,0);
+	var imageRot = new THREE.Vector3	(90,90,0);
+	var imageScale = new THREE.Vector3(5,3,1);
+
+    readTextFile("data.json", function(text) {
+    recievedObject = JSON.parse(text);
+    console.log("len "+recievedObject.length);
+    
+    
+    
+    for(var i=0;i<recievedObject.length;i++)
+ 	{
+ 	    currentScene=i;
+ 	    recievedObjectCopy.push(recievedObject[i]);
+ 	    for(var j=0;j<recievedObject[i].length;j++)
+ 	    {
+ 	        
+			switch(recievedObject[i][j].objectType)
+			{
+					case ObjectType.Cube:
+					    console.log("boax");
+					loadBox(recievedObject[i][j].position.x,recievedObject[i][j].position.y,recievedObject[i][j].position.z);
+					break;
+					
+					case ObjectType.Sphere:
+					    console.log("sphere");
+					loadSphere(recievedObject[i][j].position.x,recievedObject[i][j].position.y,recievedObject[i][j].position.z);
+					break;
+
+					case ObjectType.Image:
+					    console.log("image");
+					loadImage(recievedObject[i][j].position.x,recievedObject[i][j].position.y,recievedObject[i][j].position.z);
+					break;
+
+					case ObjectType.Video:
+					    console.log("video");
+					loadVideo(recievedObject[i][j].position.x,recievedObject[i][j].position.y,recievedObject[i][j].position.z);
+					break;
+			}
+ 	    }
+	}
+
+});
+
+    const light = new THREE.PointLight(0xffffff, 1.2);
+    light.position.set(1.1, 1.1, 1);
+    anchor[0].group.add(light);
+    const light2 = new THREE.PointLight(0xffffff, 1.2);
+    light2.position.set(1.1, 1.1, 1);
+    anchor[1].group.add(light2);
+}
+
+function loadBox(posx,posy,posz)
+{
+	console.log("loadboc");
+	const texture = new THREE.TextureLoader().load( 'textures/crate.gif' );
+				texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+				const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
+			//	const geometry2 = new THREE.sp
+				const material = new THREE.MeshLambertMaterial( { map: texture, transparent: true } );
+			    var mesh = new THREE.Mesh( geometry, material );
+
+				anchor[currentScene].group.add(mesh);
+				mesh.position.set(posx*0.001,posz*0.001,posy*0.001);
+				objects.push(mesh);
+
+}
+
+function loadSphere(posx,posy,posz)
+{
+	const geometry = new THREE.SphereGeometry( 0.07, 32, 16 );
+	const material = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
+	var sphere = new THREE.Mesh( geometry, material );
+    anchor[currentScene].group.add(sphere);
+    sphere.position.set(posx*0.001,posz*0.001,posy*0.001);
+    objects.push(sphere);
+}
+
+function loadImage(posx,posy,posz)
+{
+	var planeGeometry = new THREE.PlaneGeometry(0.3, 0.3, 1, 1);
+    var textur = new THREE.TextureLoader().load( 'textures/largeg.png' );
+    var planeMaterial = new THREE.MeshPhysicalMaterial( { map: textur } );
+    var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+
+    console.log("plane added");
+    anchor[currentScene].group.add(plane);
+    plane.position.set(posx*0.001,posz*0.001,posy*0.001);
+  //  objects.push(plane);
+}
+
+function loadVideo(posx,posy,posz)
+{
+	var planeGeometry = new THREE.PlaneGeometry(0.3, 0.3, 1, 1);
+    var textur = new THREE.TextureLoader().load( 'textures/largeg.png' );
+    var planeMaterial = new THREE.MeshPhysicalMaterial( { map: textur } );
+    var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.receiveShadow = true;
+
+    console.log("plane added");
+    anchor[currentScene].group.add(plane);
+    plane.position.set(posx*0.001,posz*0.001,posy*0.001);
+    objects.push(plane);
+}
+
+function loadGLTF(url)
+{
+	// Instantiate a loader
+const loader = new GLTFLoader();
+
+
+// Load a glTF resource
+loader.load(
+	// resource URL
+	'models/DamagedHelmet.glb',
+	// called when the resource is loaded
+	function ( gltf ) {
+
+		//scene.add( gltf.scene );
+		anchor[currentScene].group.add(gltf.scene);
+		mesh= gltf.scene;
+		gltf.scene.scale.set(100,100,100);
+
+
+		gltf.animations; // Array<THREE.AnimationClip>
+		gltf.scene; // THREE.Group
+		gltf.scenes; // Array<THREE.Group>
+		gltf.cameras; // Array<THREE.Camera>
+		gltf.asset; // Object
+
+	},
+	// called while loading is progressing
+	function ( xhr ) {
+
+		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+
+	},
+	// called when loading has errors
+	function ( error ) {
+
+		console.log( 'An error happened' );
+
+	}
+	);
+}
+
+
+
+	       document.addEventListener( 'mousedown', onDocumentMouseDown );
+
+			function onDocumentMouseDown( event ) {
+			    
+			console.log("mouse down event");
+			
+            event.preventDefault();
+            
+            
+            var mouse3D = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1,   
+                                    -( event.clientY / window.innerHeight ) * 2 + 1,  
+                                    0.5 );     
+                                    
+            var raycaster =  new THREE.Raycaster();    
+            
+			raycaster.setFromCamera( mouse3D, camera );
+			
+			
+            var intersects = raycaster.intersectObjects( scene.children ); 
+			
+			 
+			 
+            if ( intersects.length > 0 ) {
+
+                
+                console.log(" intersect len : "+intersects.length);
+                
+                console.log(" objects len : "+objects.length);
+                
+                for(var i=0;i<objects.length;i++)
+                {
+                   
+                        
+        		        if(intersects[0].object==objects[i])
+        		        {
+        		            console.log("object found");
+        		             if(recievedObjectCopy[i].actionObject=="NONE")
+                             { 
+        		            	console.log("none ");
+        		            	//hide the mesh, replace below line
+        		            	objects[i].position.set(0,0,0);
+        		             }
+        		             
+        		             if(recievedObjectCopy[i].actionObject=="CUBE")
+        		             {
+        		                 objects[i].position.set(10,0,0);
+        		                 loadBox(recievedObjectCopy[i].position.x,recievedObjectCopy[i].position.y,recievedObjectCopy[i].position.z);
+        		             }
+        		             
+        		             if(recievedObjectCopy[i].actionObject=="SPHERE")
+        		             {
+        		                 objects[i].position.set(10,0,0);
+        		                 loadSphere(recievedObjectCopy[i].position.x,recievedObjectCopy[i].position.y,recievedObjectCopy[i].position.z);
+        		             }
+        		             
+        		             if(recievedObjectCopy[i].actionObject=="IMAGE")
+        		             {
+        		                 objects[i].position.set(10,0,0);
+        		                 loadImage(recievedObjectCopy[i].position.x,recievedObjectCopy[i].position.y,recievedObjectCopy[i].position.z);
+        		             }
+                        }
+                }
+                
+            }
+			 
+        	}
+
+    </script>
+    <style>
+      body {
+	margin: 0;
+      }
+      #container {
+	width: 100vw;
+	height: 100vh;
+	position: relative;
+	overflow: hidden;
+      }
+      #control {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 2;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="control">
+      <button id="startButton">Start</button>
+      <button id="stopButton">Stop</button>
+    </div>
+    <div id="container">
+    </div>
+  </body>
+</html>
